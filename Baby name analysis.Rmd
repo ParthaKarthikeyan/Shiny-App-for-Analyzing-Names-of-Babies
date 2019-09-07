@@ -1,0 +1,242 @@
+---
+title: "SHINY Assignment 1"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+install.packages("readxl")
+install.packages("readxl")
+install.packages('Rcpp')
+library(shiny)
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(rstudioapi)
+## Setting the Path
+getwd()
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+## Importing the dataset using readxl library
+data<-read_excel("Top100_Popular_Baby_Names.xlsx")
+## Check for another sheet
+data2<-read_excel("Top100_Popular_Baby_Names.xlsx",sheet = "Boys' Names")
+
+### Data Processing 
+## Removing the rows
+my_data<-data[-c(1,2,3,4,5,6),]
+## Removing the columns
+not_all_na <- function(my_data) {!all(is.na(my_data))}
+My_data<-my_data%>% select_if(not_all_na)
+df<-select(My_data,-X__135)
+## Changing the name of the Columns
+names(df)[1]<-"RANK"
+i<-1
+j<-2
+year<-1954
+for (m in 1:65){
+  i <-i+2
+  j <-j+2
+  names(df)[j]<-"NAME"
+  names(df)[i]<- year
+  year <- year+1
+  m<-m+1
+  if(j==130) break
+}
+names(df)[2]<-"NAME"
+names(df)[131]<-2018
+### Creating the required format Dataframe
+x<-data.frame()
+## Populating the names
+e<-2
+a<-1
+for (d in 2:66){
+  for (c in 1:100){
+  x[a,1]<-df[c,e]
+  a<-a+1
+  }
+  e<-e+2
+}
+## Populating the count
+e<-3
+a<-1
+for (d in 2:66){
+  for (c in 1:100){
+  x[a,2]<-df[c,e]
+  a<-a+1
+  }
+  e<-e+2
+}
+names(x)[1]<-"NAMES"
+names(x)[2]<-"Counts"
+## Populating the Year
+y<-1954
+a<-1
+for (j in 1:65){
+  for (i in 1:100){
+  x[a,3]<-y
+  a<-a+1
+  }
+  y<-y+1
+}
+names(x)[3]<-"YEARS"
+
+### For BOYS
+my_data2<-data2[-c(1,2,3,4,5,6),]
+## Removing the columns
+not_all_na <- function(my_data2) {!all(is.na(my_data2))}
+My_data2<-my_data2%>% select_if(not_all_na)
+df2<-select(My_data2,-X__135)
+## Changing the name of the Columns
+names(df2)[1]<-"RANK"
+i<-1
+j<-2
+year<-1954
+for (m in 1:65){
+  i <-i+2
+  j <-j+2
+  names(df2)[j]<-"NAME"
+  names(df2)[i]<- year
+  year <- year+1
+  m<-m+1
+  if(j==130) break
+}
+names(df2)[2]<-"NAME"
+names(df2)[131]<-2018
+
+x_boys<-data.frame()
+## Populating the names
+e<-2
+a<-1
+for (d in 2:66){
+  for (c in 1:100){
+  x_boys[a,1]<-df2[c,e]
+  a<-a+1
+  }
+  e<-e+2
+}
+## Populating the count
+e<-3
+a<-1
+for (d in 2:66){
+  for (c in 1:100){
+  x_boys[a,2]<-df2[c,e]
+  a<-a+1
+  }
+  e<-e+2
+}
+names(x_boys)[1]<-"NAMES"
+names(x_boys)[2]<-"Counts"
+## Populating the Year
+y<-1954
+a<-1
+for (j in 1:65){
+  for (i in 1:100){
+  x_boys[a,3]<-y
+  a<-a+1
+  }
+  y<-y+1
+}
+names(x_boys)[3]<-"YEARS"
+list_years<-unique(x$YEARS)
+list_boys<-unique(x_boys$NAMES)
+list_girls<-unique(x$NAMES)
+
+
+### SHINY APP
+
+
+ui<-fluidPage(
+
+titlePanel("Assignemnt 1"),
+mainPanel(
+  
+  tabsetPanel(type = "tabs",
+              tabPanel("Tab1",
+                       sidebarLayout(
+                         sidebarPanel(selectInput("year1", label = "Year",choices = list_years,
+                                                  selected = "")),
+                         tableOutput("table1") 
+                         
+                         )),
+              tabPanel("Tab2",
+                       sidebarLayout(
+                         sidebarPanel(selectInput("year2", label = "Year",choices = list_years,
+                                                  selected = "")),
+                         tableOutput("table2") 
+                         
+                       )
+                       ),
+              tabPanel("Tab3", 
+                       sidebarLayout(
+                         sidebarPanel(selectInput("name1", label = "Names",choices = list_girls,
+                                                  selected = "")),
+                      plotOutput("plot1"))),
+              tabPanel("Tab4",
+                       sidebarLayout(
+                         sidebarPanel(selectInput("name2", label = "Names",choices = list_boys,
+                                      selected = "")),
+                         plotOutput("plot2")
+
+ 
+)
+)
+)
+)
+)
+
+server <- function(input, output){
+  
+  output$table1 <- renderTable({
+    print(input$year1)
+    out1<-filter(x,YEARS==input$year1)
+    out1$Counts<-as.numeric(out1$Counts)
+    out1<-out1[1:10,c("NAMES","Counts")]
+    
+  })
+  output$table2 <- renderTable({
+    print(input$year2)
+    out2<-filter(x_boys,YEARS==input$year2)
+    out2$Counts<-as.numeric(out2$Counts)
+    out2<-out2[1:10,c("NAMES","Counts")]
+  }) 
+  output$plot1<- renderPlot({
+    
+    out3<-filter(x,x$NAMES==input$name1)
+    out3$YEARS<-as.factor(out3$YEARS)
+    out3$Counts<-as.integer(out3$Counts)
+    ggplot(data=out3,aes(x=YEARS,y=Counts))+ ylab("No of Babies Named")+ggtitle("Popularity of the Name over Time")+geom_col()+
+      scale_y_continuous(breaks=seq(100,1000,100))+
+      theme(text = element_text(size=15),axis.text.x = element_text(angle = 90, hjust = 1))
+  
+    
+  })
+  output$plot2<- renderPlot({
+    
+    out4<-filter(x_boys,x_boys$NAMES==input$name2)
+    out4$YEARs<-as.factor(out4$YEARS)
+    out4$Counts<-as.integer(out4$Counts)
+    ggplot(data=out4,aes(x=YEARS,y=Counts))+ylab("No of Babies Named")+ggtitle("Popularity of the Name over Time")+ geom_col()+
+      scale_y_continuous(breaks=seq(100,1600,100))+
+      theme(text = element_text(size=15),axis.text.x = element_text(angle = 90, hjust = 1))
+    
+    
+  })
+  
+  
+}
+shinyApp(ui = ui, server = server)
+
+
+plot(cars)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
